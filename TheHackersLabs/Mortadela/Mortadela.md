@@ -370,7 +370,7 @@ Entonces lo adaptamos a nuestro entorno, como anteriormente mencione, ahora nos 
 ```
 Como se ve parece que al intentar manda algo nos da error, pero si miramos en la url que nos ha proporcionado, parece que ha subido la webshell exitosamente, ahora cambiamos la ip que nos da por la nuestra, ya que parece que es un fallo del wordpress(el error de mandar una ejecucion de comandos puede ser devido al redirect) 
  
-Con curl podemos ejecutar comandos ya que se trata de una webshell (no hay que poner el &quot; en la url)
+Con curl podemos ejecutar comandos ya que se trata de una webshell (no hay que poner el \&quot; en la url)
 ```bash
 ┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
 └─$ curl http://10.0.0.156/wordpress/wp-content/uploads/2024/04/rokganqjscduehq-1712344618.1306.php?cmd=id
