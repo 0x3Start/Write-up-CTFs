@@ -79,15 +79,6 @@ Podemos observar que el unico servicio que parece desactualizado es mysql, pero 
 http://10.0.0.156 [200 OK] Apache[2.4.57], Country[RESERVED][ZZ], HTTPServer[Debian Linux][Apache/2.4.57 (Debian)], IP[10.0.0.156], Title[Apache2 Debian Default Page: It works]                                                                                                                                                                       
 ```
 Y lo que hay es la pagina por defecto del servidor apache2
-```html
-┌──(coolatos㉿CooLaToS)-[~/HMV/jabita/ferox]
-└─$ curl http://10.1.1.49/building/                                                                                                                                                                                                      1 ⨯
-<!DOCTYPE html>
-<html>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-        <body>
-          <img source
-        </body>
-</html>
-```
+
+![Texto alternativo](https://github.com/0x3Start/Write-up-CTFs/blob/main/TheHackersLabs/Mortadela/img/image.png?raw=true)
+
