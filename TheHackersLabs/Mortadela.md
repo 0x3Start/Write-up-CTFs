@@ -35,9 +35,10 @@ MAC Address: 08:00:27:EE:58:5C (Oracle VirtualBox virtual NIC)
 
 Nmap done: 1 IP address (1 host up) scanned in 3.08 seconds
 ```
+ 
 Una vez que sabemos que puertos tiene abierto vamos a ejecutar un escaneo mas centrado en detectar la version y ejecutar algunos scripts principales
-
-
+ 
+ 
 ```bash
 
 ┌──(kali㉿kali)-[~]
@@ -68,4 +69,24 @@ Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 Nmap done: 1 IP address (1 host up) scanned in 6.85 seconds
+```
+Podemos observar que el unico servicio que parece desactualizado es mysql, pero primero vamos a observar que hay el servidor apache
+
+```bash
+┌──(kali㉿kali)-[~]
+└─$ whatweb 10.0.0.156
+http://10.0.0.156 [200 OK] Apache[2.4.57], Country[RESERVED][ZZ], HTTPServer[Debian Linux][Apache/2.4.57 (Debian)], IP[10.0.0.156], Title[Apache2 Debian Default Page: It works]                                                                                                                                                                       
+```
+Y lo que hay es la pagina por defecto del servidor apache2
+```html
+┌──(coolatos㉿CooLaToS)-[~/HMV/jabita/ferox]
+└─$ curl http://10.1.1.49/building/                                                                                                                                                                                                      1 ⨯
+<!DOCTYPE html>
+<html>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+        <body>
+          <img source
+        </body>
+</html>
 ```
