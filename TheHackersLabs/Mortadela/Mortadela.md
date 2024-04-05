@@ -74,7 +74,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 6.85 seconds
 ```
 Podemos observar que el unico servicio que parece desactualizado es mysql, pero primero vamos a observar que hay el servidor apache
-
+## Enumeracion
 ```bash
 ┌──(kali㉿kali)-[~]
 └─$ whatweb 10.0.0.156
@@ -302,6 +302,8 @@ Interesting Finding(s):
 
 ```
 Si analizamos los resultados podemos observar que hemos podido encontrar 2 plugins, el de "akismet" parece que no hay mucha diferencia con la version actual pero en cambio la de wpdiscuz esta bastante desactualizada
+## Explotacion
+ 
 Buscando el google por alguna vulneravilidad del plugin "wpdiscuz" con la version 7.0.4 , nos encontramos bastantes exploits
 
 ![](https://github.com/0x3Start/Write-up-CTFs/blob/main/TheHackersLabs/Mortadela/img/VirtualBoxVM_XNE4QOhqRF.png?raw=true)
@@ -424,6 +426,7 @@ zsh: suspended  nc -lvnp 9020
 reset xterm                     
 www-data@mortadela:/var/www/html/wordpress/wp-content/uploads/2024/04$ export TERM=xterm
 ```
+## Escalada de privilegios
 Ahora solo nos queda buscar como escalar privilegios, si vamos enumerando podemos observar que hay un archivo muy peculiar en /opt el cual tenemos permisos de lectura
 ```bash
 www-data@mortadela:/$ cd /opt/
