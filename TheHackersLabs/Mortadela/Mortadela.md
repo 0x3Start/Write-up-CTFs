@@ -80,5 +80,114 @@ http://10.0.0.156 [200 OK] Apache[2.4.57], Country[RESERVED][ZZ], HTTPServer[Deb
 ```
 Y lo que hay es la pagina por defecto del servidor apache2
 
-![Texto alternativo](https://github.com/0x3Start/Write-up-CTFs/blob/main/TheHackersLabs/Mortadela/img/image.png?raw=true)
+![Imagen1](https://github.com/0x3Start/Write-up-CTFs/blob/main/TheHackersLabs/Mortadela/img/VirtualBoxVM_01dQkEql5t.png?raw=true)
 
+Ahora vamos a fuzzear en busca de algun servicio
+```bash
+┌──(kali㉿kali)-[~]
+└─$ gobuster dir -u http://10.0.0.156/ -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt 
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.0.0.156/
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/wordpress            (Status: 301) [Size: 312] [--> http://10.0.0.156/wordpress/]
+Progress: 220560 / 220561 (100.00%)
+===============================================================
+Finished
+===============================================================
+```
+Vemos que nos encontramos con un wordpress, si visitamos la pagina nos encontramos con esto
+
+![Imagen2](https://github.com/0x3Start/Write-up-CTFs/blob/main/TheHackersLabs/Mortadela/img/VirtualBoxVM_lTDXfA7RCb.png?raw=true)
+Al ser un wordpress tenemos la herramienta wpscan que sirve para enumerar y buscar vulneravilidades, primero vamos a hacer un escaneo basico
+```bash
+┌──(kali㉿kali)-[~]
+└─$ wpscan --url http://10.0.0.156/wordpress/
+_______________________________________________________________
+         __          _______   _____
+         \ \        / /  __ \ / ____|
+          \ \  /\  / /| |__) | (___   ___  __ _ _ __ ®
+           \ \/  \/ / |  ___/ \___ \ / __|/ _` | '_ \
+            \  /\  /  | |     ____) | (__| (_| | | | |
+             \/  \/   |_|    |_____/ \___|\__,_|_| |_|
+
+         WordPress Security Scanner by the WPScan Team
+                         Version 3.8.25
+       Sponsored by Automattic - https://automattic.com/
+       @_WPScan_, @ethicalhack3r, @erwan_lr, @firefart
+_______________________________________________________________
+
+[+] URL: http://10.0.0.156/wordpress/ [10.0.0.156]
+[+] Started: Fri Apr  5 12:45:50 2024
+
+Interesting Finding(s):
+
+[+] Headers
+ | Interesting Entry: Server: Apache/2.4.57 (Debian)
+ | Found By: Headers (Passive Detection)
+ | Confidence: 100%
+
+[+] XML-RPC seems to be enabled: http://10.0.0.156/wordpress/xmlrpc.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+ | References:
+ |  - http://codex.wordpress.org/XML-RPC_Pingback_API
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_ghost_scanner/
+ |  - https://www.rapid7.com/db/modules/auxiliary/dos/http/wordpress_xmlrpc_dos/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_xmlrpc_login/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_pingback_access/
+
+[+] WordPress readme found: http://10.0.0.156/wordpress/readme.html
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] Upload directory has listing enabled: http://10.0.0.156/wordpress/wp-content/uploads/
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] The external WP-Cron seems to be enabled: http://10.0.0.156/wordpress/wp-cron.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 60%
+ | References:
+ |  - https://www.iplocation.net/defend-wordpress-from-ddos
+ |  - https://github.com/wpscanteam/wpscan/issues/1299
+
+[+] WordPress version 6.4.3 identified (Outdated, released on 2024-01-30).
+ | Found By: Emoji Settings (Passive Detection)
+ |  - http://10.0.0.156/wordpress/, Match: 'wp-includes\/js\/wp-emoji-release.min.js?ver=6.4.3'
+ | Confirmed By: Meta Generator (Passive Detection)
+ |  - http://10.0.0.156/wordpress/, Match: 'WordPress 6.4.3'
+
+[i] The main theme could not be detected.
+
+[+] Enumerating All Plugins (via Passive Methods)
+
+[i] No plugins Found.
+
+[+] Enumerating Config Backups (via Passive and Aggressive Methods)
+ Checking Config Backups - Time: 00:00:00 <=======================================================================================> (137 / 137) 100.00% Time: 00:00:00
+
+[i] No Config Backups Found.
+
+[!] No WPScan API Token given, as a result vulnerability data has not been output.
+[!] You can get a free API token with 25 daily requests by registering at https://wpscan.com/register
+
+[+] Finished: Fri Apr  5 12:46:23 2024
+[+] Requests Done: 164
+[+] Cached Requests: 4
+[+] Data Sent: 43.188 KB
+[+] Data Received: 280.648 KB
+[+] Memory used: 227.344 MB
+[+] Elapsed time: 00:00:33
+```
+Ha encontrado algunas cosas interesantes pero esto no nos sirve mucho, ahora vamos a enumerar plugins y ver su version
