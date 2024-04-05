@@ -555,4 +555,4 @@ root@mortadela:/opt# cat /root/root.txt
 flag{root}
 
 ```
-Y hemos podido obtener abmas flags
+Y hemos podido obtener ambas flags
