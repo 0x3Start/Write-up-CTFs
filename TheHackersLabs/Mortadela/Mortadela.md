@@ -190,4 +190,111 @@ Interesting Finding(s):
 [+] Memory used: 227.344 MB
 [+] Elapsed time: 00:00:33
 ```
-Ha encontrado algunas cosas interesantes pero esto no nos sirve mucho, ahora vamos a enumerar plugins y ver su version
+Ha encontrado algunas cosas interesantes pero esto no nos sirve mucho, ahora vamos a enumerar los plugins que tiene el wordpress y ver su version, para eso vamos a utilizar el parametro --plugins-detection en modo agresivo, esto buscara en la carpeta de plugins de wordpress y fuzzeara en esa carpeta en busca de un codigo de estado diferente al 404
+```bash
+┌──(kali㉿kali)-[~]
+└─$ wpscan --url http://10.0.0.156/wordpress/ --plugins-detection aggressive
+_______________________________________________________________
+         __          _______   _____
+         \ \        / /  __ \ / ____|
+          \ \  /\  / /| |__) | (___   ___  __ _ _ __ ®
+           \ \/  \/ / |  ___/ \___ \ / __|/ _` | '_ \
+            \  /\  /  | |     ____) | (__| (_| | | | |
+             \/  \/   |_|    |_____/ \___|\__,_|_| |_|
+
+         WordPress Security Scanner by the WPScan Team
+                         Version 3.8.25
+       Sponsored by Automattic - https://automattic.com/
+       @_WPScan_, @ethicalhack3r, @erwan_lr, @firefart
+_______________________________________________________________
+
+[+] URL: http://10.0.0.156/wordpress/ [10.0.0.156]
+[+] Started: Fri Apr  5 14:50:40 2024
+
+Interesting Finding(s):
+
+[+] Headers
+ | Interesting Entry: Server: Apache/2.4.57 (Debian)
+ | Found By: Headers (Passive Detection)
+ | Confidence: 100%
+
+[+] XML-RPC seems to be enabled: http://10.0.0.156/wordpress/xmlrpc.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+ | References:
+ |  - http://codex.wordpress.org/XML-RPC_Pingback_API
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_ghost_scanner/
+ |  - https://www.rapid7.com/db/modules/auxiliary/dos/http/wordpress_xmlrpc_dos/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_xmlrpc_login/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_pingback_access/
+
+[+] WordPress readme found: http://10.0.0.156/wordpress/readme.html
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] Upload directory has listing enabled: http://10.0.0.156/wordpress/wp-content/uploads/
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] The external WP-Cron seems to be enabled: http://10.0.0.156/wordpress/wp-cron.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 60%
+ | References:
+ |  - https://www.iplocation.net/defend-wordpress-from-ddos
+ |  - https://github.com/wpscanteam/wpscan/issues/1299
+
+[+] WordPress version 6.4.3 identified (Outdated, released on 2024-01-30).
+ | Found By: Emoji Settings (Passive Detection)
+ |  - http://10.0.0.156/wordpress/, Match: 'wp-includes\/js\/wp-emoji-release.min.js?ver=6.4.3'
+ | Confirmed By: Meta Generator (Passive Detection)
+ |  - http://10.0.0.156/wordpress/, Match: 'WordPress 6.4.3'
+
+[i] The main theme could not be detected.
+
+[+] Enumerating All Plugins (via Aggressive Methods)
+ Checking Known Locations - Time: 00:03:22 <================================================================================> (105035 / 105035) 100.00% Time: 00:03:22
+[+] Checking Plugin Versions (via Passive and Aggressive Methods)
+
+[i] Plugin(s) Identified:
+
+[+] akismet
+ | Location: http://10.0.0.156/wordpress/wp-content/plugins/akismet/
+ | Last Updated: 2024-03-21T00:55:00.000Z
+ | Readme: http://10.0.0.156/wordpress/wp-content/plugins/akismet/readme.txt
+ | [!] The version is out of date, the latest version is 5.3.2
+ |
+ | Found By: Known Locations (Aggressive Detection)
+ |  - http://10.0.0.156/wordpress/wp-content/plugins/akismet/, status: 200
+ |
+ | Version: 5.3.1 (100% confidence)
+ | Found By: Readme - Stable Tag (Aggressive Detection)
+ |  - http://10.0.0.156/wordpress/wp-content/plugins/akismet/readme.txt
+ | Confirmed By: Readme - ChangeLog Section (Aggressive Detection)
+ |  - http://10.0.0.156/wordpress/wp-content/plugins/akismet/readme.txt
+
+[+] wpdiscuz
+ | Location: http://10.0.0.156/wordpress/wp-content/plugins/wpdiscuz/
+ | Last Updated: 2024-03-27T17:26:00.000Z
+ | Readme: http://10.0.0.156/wordpress/wp-content/plugins/wpdiscuz/readme.txt
+ | [!] The version is out of date, the latest version is 7.6.16
+ |
+ | Found By: Known Locations (Aggressive Detection)
+ |  - http://10.0.0.156/wordpress/wp-content/plugins/wpdiscuz/, status: 200
+ |
+ | Version: 7.0.4 (80% confidence)
+ | Found By: Readme - Stable Tag (Aggressive Detection)
+ |  - http://10.0.0.156/wordpress/wp-content/plugins/wpdiscuz/readme.txt
+
+[+] Enumerating Config Backups (via Passive and Aggressive Methods)
+ Checking Config Backups - Time: 00:00:10 <=======================================================================================> (137 / 137) 100.00% Time: 00:00:10
+
+[i] No Config Backups Found.
+
+[!] No WPScan API Token given, as a result vulnerability data has not been output.
+[!] You can get a free API token with 25 daily requests by registering at https://wpscan.com/register
+
+```
+Si analizamos los resultados podemos observar que hemos podido encontrar 2 plugins, el de "akismet" parece que no hay mucha diferencia con la version actual pero en cambio la de wpdiscuz esta bastante desactualizada
+Buscando el google por alguna vulneravilidad del plugin "wpdiscuz" con la version 7.0.4 , nos encontramos bastantes exploits
+
+![](https://github.com/0x3Start/Write-up-CTFs/blob/main/TheHackersLabs/Mortadela/img/VirtualBoxVM_XNE4QOhqRF.png?raw=true)
